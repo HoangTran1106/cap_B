@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Fire/Smoke Detection System</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+	<style>
+		body {
+			background-color: #f8f9fa;
+		}
+		.container {
+			max-width: 1000px;
+			margin-top: 50px;
+		}
+		#video-feed {
+			width: 100%;
+			max-width: 800px;
+			height: auto;
+			border: 3px solid #dc3545;
+			border-radius: 10px;
+		}
+		.btn-lg {
+			margin-top: 20px;
+		}
+		#thresholdValue {
+			font-weight: bold;
+		}
+		#notification {
+			display: none;
+			margin-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1 class="text-center mb-4">Fire Detection System</h1>
+		<div class="row justify-content-center">
+			<div class="col-12 text-center">
+				<!-- <video width="640" height="360" controls>
+					<source src="your-video-file.webm" type="video/webm">
+					Your browser does not support the video tag.
+				</video>-->
+				<input type="file" id="pictureInput" accept="image/*">
+			</div>
+		</div>
+		<div class="row justify-content-center mt-4">
+			<div class="col-6 text-center">
+				<button id="startBtn" class="btn btn-success btn-lg">Start Detection</button>
+				<button id="stopBtn" class="btn btn-danger btn-lg" style="display: none;">Stop Detection</button>
+			</div>
+		</div>
+		<div class="row justify-content-center mt-4">
+			<div class="col-6">
+				<label for="thresholdSlider" class="form-label">Confidence Threshold: <span id="thresholdValue">0.50</span></label>
+				<input type="range" class="form-range" min="0" max="1" step="0.01" value="0.50" id="thresholdSlider">
+				<div id="notification" class="alert alert-warning" role="alert">
+					Confidence threshold can only be adjusted when detection is not active.
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script>
+		$(document).ready(function() {
+			let detectionActive = false;
+			let new_threshold_ = 0.5;
+
+			$('#startBtn').click(function() {
+				$.get('/start_detection', function(data) {
+					$('#startBtn').hide();
+					$('#stopBtn').show();
+					detectionActive = true;
+				});
+			});
+
+			$('#stopBtn').click(function() {
+				$.get('/stop_detection', function(data) {
+					$('#stopBtn').hide();
+					$('#startBtn').show();
+					detectionActive = false;
+
+					// 
+					const threshold = parseFloat($("#thresholdSlider").val()).toFixed(2);
+					$.ajax({
+						url: '/set_threshold',
+						method: 'POST',
+						contentType: 'application/json',
+						data: JSON.stringify({threshold: threshold}),
+						success: function(response) {
+							if (response.status === "error") {
+								$('#notification').text(response.message).show();
+							} else {
+								$('#notification').hide();
+								console.log('Threshold updated:', response.new_threshold);
+							}
+						}
+					});
+				});
+			});
+
+			$('#thresholdSlider').on('input', function() {
+				var threshold = parseFloat($(this).val()).toFixed(2);
+				$('#thresholdValue').text(threshold);
+				if (!detectionActive) {
+					$.ajax({
+						url: '/set_threshold',
+						method: 'POST',
+						contentType: 'application/json',
+						data: JSON.stringify({threshold: threshold}),
+						success: function(response) {
+							if (response.status === "error") {
+								$('#notification').text(response.message).show();
+							} else {
+								$('#notification').hide();
+								console.log('Threshold updated:', response.new_threshold);
+							}
+						}
+					});
+				} else {
+					$('#notification').show();
+				}
+			});
+			
+			let allow_Text_Mode = false;
+			let allow_Capture_Mode = true;
+			let allow_Video_Mode = false;
+			let mode_turned = false;
+			let Text_pause = true;
+			let on_or_off = false;
+
+			// ////////////////// MODE CONTROL
+			document.addEventListener('keyup', function(event) {
+				if (event.key === 'q') {
+					// allow_Text_Mode = !allow_Text_Mode;
+					mode_turned = 1;
+					on_or_off = allow_Text_Mode;
+				} else if (event.key === 'd') {
+					// allow_Capture_Mode = !allow_Capture_Mode;
+					mode_turned = 2;
+					on_or_off = allow_Capture_Mode;
+				} else if (event.key === 't') {
+					// allow_Video_Mode = !allow_Video_Mode;
+					mode_turned = 3;
+					on_or_off = allow_Video_Mode;
+				}
+				if (event.key === 'q' || event.key === 'd' || event.key === 't') {
+					$.ajax({
+							url: '/mode_Control',
+							method: 'POST',
+							contentType: 'application/json',
+							data: JSON.stringify({
+								mode_turned: mode_turned,
+								on_or_off: on_or_off
+							}),
+							success: function(response) {
+								console.log(response);
+							}
+					});
+				}
+				if (event.key === 'q') {
+					allow_Text_Mode = !allow_Text_Mode;
+					// mode_turned = 'allow_Text_Mode';
+				} else if (event.key === 'd') {
+					console.log(allow_Capture_Mode);
+					allow_Capture_Mode = !allow_Capture_Mode;
+					// mode_turned = 'allow_Capture_Mode';
+				} else if (event.key === 't') {
+					allow_Video_Mode = !allow_Video_Mode;
+					// mode_turned = 'allow_Video_Mode';
+				}
+			})
+			// ////////////////// TEST Text 
+
+			document.addEventListener('keydown', function(event) {
+					// if (event.key === 'q') {
+					//     allow_Text_Mode = !allow_Text_Mode;
+					// } else
+					if (event.key === 'w') {
+						const eventSource = new EventSource('/TextMode/feed');
+						eventSource.onmessage = function(event) {
+							const data = JSON.parse(event.data);
+							console.log(data, allow_Text_Mode, Text_pause);
+							// Update your UI with the data
+							// $('#Text_text').textContent = data;
+						};  
+						Text_pause = !Text_pause;
+						$.ajax({
+							url: '/TextMode/control',
+							method: 'POST',
+							contentType: 'application/json',
+							data: JSON.stringify({
+								allow_Text_Mode: allow_Text_Mode,
+								Text_pause: Text_pause}),
+							success: function(response) {
+								console.log(response.status)
+							}
+						});
+					}
+				});
+			
+			// ////////////// TEST Capture
+			let Capture_get = false;
+			
+			document.addEventListener('keydown', function(event) {
+					// if (event.key === 'd') {
+					//     allow_Capture_Mode = !allow_Capture_Mode;
+					// } else 
+					if (event.key === 'f') {
+						Capture_get = true;
+						$.ajax({
+							url: '/CaptureMode/control',
+							method: 'POST',
+							contentType: 'application/json',
+							data: JSON.stringify({
+								allow_Capture_Mode: allow_Capture_Mode,
+								Capture_get: Capture_get}),
+							success: function(response) {
+								if (response.status === "CaptureMode_control_success") {
+									console.log('CaptureMode_control_success')
+									console.log(response.Capture_get)
+								} else {
+									console.log('heheheheheh')
+								}
+							}
+						});
+
+						const input = document.getElementById('pictureInput');
+						const file = input.files[0];
+
+						if (!file) {
+							console.log('No picture selected.');
+							return;
+						}
+
+						const reader = new FileReader();
+
+						// Convert image to Data URL and log it to the console
+						reader.onload = function(event) {
+							const dataUrl = event.target.result;
+							console.log('Picture Data URL:', dataUrl);
+						};
+
+						// Read the file as a Data URL (base64)
+						reader.readAsDataURL(file);
+						}
+				});
+			// document.addEventListener('keyup', function(event) {
+			// // allow_Capture_Mode = allow_Capture_Mode;
+			// if (event.key === 'f') {
+			// 		Capture_get = false;
+			// 		$.ajax({
+			// 			url: '/CaptureMode/control',
+			// 			method: 'POST',
+			// 			contentType: 'application/json',
+			// 			data: JSON.stringify({
+			// 				allow_Capture_Mode: allow_Capture_Mode,
+			// 				Capture_get: Capture_get}),
+			// 			success: function(response) {
+			// 				if (response.status === "CaptureMode_control_success") {
+			// 					console.log('CaptureMode_control_success')
+			// 				} else {
+			// 					console.log('heheheheheh')
+			// 				}
+			// 		}});
+			// 	}
+			// });
+
+			// ///////////////// TEST Video
+			let File_Export_BOOL = false; 
+			
+			// Fetch the video from the Flask server
+			let allow_after_fetch_SUCCESSFULLY = true;
+			document.addEventListener('keydown', function(event) {
+					if (event.key === 'y') {
+						if (allow_after_fetch_SUCCESSFULLY) {
+							allow_after_fetch_SUCCESSFULLY = false;
+						$.ajax({
+							url: '/VideoMode/control',
+							method: 'POST',
+							contentType: 'application/json',
+							data: JSON.stringify({
+								allow_Video_Mode: allow_Video_Mode,
+								File_Export_BOOL: File_Export_BOOL}),
+							success: function(response) {
+								if (response.status === "VideoMode_control_success") {
+									console.log('VideoMode_control_success')
+									console.log(response.allow_Video_Mode)
+									console.log(response.File_Export_BOOL)
+								} else {
+									console.log('heheheheheh')
+								}
+							}
+						});
+							fetch('/VideoMode/getVideo')
+						.then(response => response.blob())
+						.then(blob => {
+							console.log(blob)
+							const videoURL = URL.createObjectURL(blob);
+							const videoElement = document.getElementById('videoPlayer');
+							videoElement.src = videoURL;
+							videoElement.play()
+							allow_after_fetch_SUCCESSFULLY = true;
+						})
+						.catch(error => console.error('Error fetching video:', error));  
+						}
+						console.log("zzz", allow_Video_Mode, File_Export_BOOL);
+					} 
+					// if (event.key === 't') {
+					//     allow_Video_Mode = !allow_Video_Mode;
+					// } else 
+					if (event.key === 'y') {
+						File_Export_BOOL = !File_Export_BOOL;
+					} 
+		});
+		});
+	</script>
+</body>
+</html>
