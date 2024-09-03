@@ -8,6 +8,9 @@ import keyboard
 # import json
 from threading import Lock
 
+detect_info_1 = {}
+detect_info_2 = {}
+
 def toggle_allow_Capture_Mode():
 	global allow_Capture_Mode
 	allow_Capture_Mode = not allow_Capture_Mode

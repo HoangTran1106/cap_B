@@ -6,6 +6,8 @@ import time
 from threading import Lock
 from collections import defaultdict
 
+detect_info_4	= {}
+
 def generate_Live_Lock (globals_var):
 	global active_connections, detect_info_4
 	active_connections = 0

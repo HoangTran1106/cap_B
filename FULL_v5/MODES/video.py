@@ -8,6 +8,8 @@ import time
 # import json
 from threading import Lock
 
+detect_info_3 = {}
+
 def toggle_allow_Video_Mode():
 	global allow_Video_Mode
 	allow_Video_Mode = not allow_Video_Mode
@@ -84,7 +86,6 @@ def generate_Video_Lock(global_vars):
 	active_connections = 0
 	counter_lock = Lock()
 
-	@stream_with_context
 	def generate_Video (global_vars):
 		global active_connections
 		with counter_lock:

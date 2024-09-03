@@ -10,6 +10,7 @@ from threading import Lock
 # import base64
 # import json
 # from threading import Lock
+detect_info_1 = {}
 
 def toggle_allow_Text_Mode():
 	global allow_Text_Mode

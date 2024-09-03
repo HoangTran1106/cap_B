@@ -43,7 +43,7 @@ Capture_prev_data = (b'--frame\r\n'
 		b'Content-Type: image/jpeg\r\n\r\n' + Capture_prev_data + b'\r\n')
 Capture_get = False
 ## Video Mode
-output_file = './output_video.webm'
+output_file = './file_example_WEBM_640_1_4MB.webm'
 File_Export_BOOL = False
 ## Live Mode
 Live_Mode_Live_Only_control = False
@@ -62,7 +62,7 @@ def modeOn_Off (mode_turned):
 def index():
 	return render_template('index.html')
 
-@app.route('/mode_Control', methods=['POST'])
+@app.route('/mode', methods=['POST'])
 def mode_Control ():
 	# global detection_active, allow_Live_Mode, allow_Video_Mode, allow_Video_Mode, allow_Text_Mode
 	global allow_Live_Mode, allow_Capture_Mode, allow_Video_Mode, allow_Text_Mode
@@ -76,12 +76,12 @@ def mode_Control ():
 		print("Not receive ")
 		for x_ in lis_t:
 			globals()[x_] = False
-	return jsonify({"mode_Control": {
+	return jsonify({"mode": {
 		# 'detection_active' : detection_active,
-		'allow_Live_Mode' : globals()['allow_Live_Mode'],
-		'allow_Video_Mode' : globals()['allow_Video_Mode'],
-		'allow_Capture_Mode' : globals()['allow_Capture_Mode'],
-		'allow_Text_Mode' : globals()['allow_Text_Mode'],
+		'1' : globals()['allow_Text_Mode'],
+		'2' : globals()['allow_Capture_Mode'],
+		'3' : globals()['allow_Video_Mode'],
+		'4' : globals()['allow_Live_Mode'],
 	}})
 
 ########################## Text Mode
@@ -139,9 +139,9 @@ def send_Video():
 	global output_file
 	# if not allow_Video_Mode:
 	# 	return Response(json.dumps('VideoMode_disabled'), mimetype='text/event-stream')
-	generate_Video_Lock(globals())
+	# generate_Video_Lock(globals())
 	# Send the file as a response
-	return send_file(output_file, mimetype='video/webm')
+	return send_file(output_file, mimetype='video/webm', as_attachment=True)
 
 @app.route('/VideoMode/control', methods=['POST'])
 def VideoMode_control():
@@ -156,7 +156,7 @@ def VideoMode_control():
 	})
 
 if __name__ == '__main__':
-	app.run(host="0.0.0.0", port=5000, debug=False)
+	app.run(host="0.0.0.0", port=5005, debug=False)
 exit()
 ########################## Live Mode
 @app.route('/video_feed')
