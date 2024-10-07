@@ -20,7 +20,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Global variables
-model = YOLO('best_120.pt')
+model = YOLO('yolov8n.pt')
 
 # For development
 camera = cv2.VideoCapture(0)
