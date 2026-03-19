@@ -13,27 +13,32 @@
 
 </div>
 
----
+
+
+## Hardware
+
+```
+ Jetson Nano B01, Pi Camera V3 
+```
 
 ## How It Works
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1e293b', 'primaryTextColor': '#f8fafc', 'lineColor': '#94a3b8', 'fontSize': '14px'}}}%%
-graph LR
-    A["📷 Camera"] ==> B["🧠 YOLOv8"]
-    B ==> C{"4 Modes"}
-    C -->|Text| D["📝 JSON Scores"]
-    C -->|Capture| E["📸 Annotated PNG"]
-    C -->|Video| F["🎬 30s MP4 Clip"]
-    C -->|Live| G["📺 MJPEG Stream"]
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '18px', 'primaryColor': '#1e293b', 'primaryTextColor': '#f8fafc', 'lineColor': '#94a3b8'}}}%%
+flowchart LR
+    A(("📷\nCamera")) --> B["🧠 YOLOv8\nInference"] --> C{4 Modes}
+    C -- Text --> D["📝 JSON"]
+    C -- Capture --> E["📸 PNG"]
+    C -- Video --> F["🎬 MP4"]
+    C -- Live --> G["📺 MJPEG"]
 
-    style A fill:#0c4a6e,stroke:#7dd3fc,color:#f0f9ff
-    style B fill:#92400e,stroke:#fcd34d,color:#fffbeb
-    style C fill:#4c1d95,stroke:#c4b5fd,color:#f5f3ff
-    style D fill:#14532d,stroke:#86efac,color:#f0fdf4
-    style E fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff
-    style F fill:#78350f,stroke:#fcd34d,color:#fffbeb
-    style G fill:#7f1d1d,stroke:#fca5a5,color:#fef2f2
+    style A fill:#0c4a6e,stroke:#7dd3fc,color:#f0f9ff,stroke-width:2px
+    style B fill:#92400e,stroke:#fcd34d,color:#fffbeb,stroke-width:2px
+    style C fill:#4c1d95,stroke:#c4b5fd,color:#f5f3ff,stroke-width:2px
+    style D fill:#14532d,stroke:#86efac,color:#f0fdf4,stroke-width:2px
+    style E fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff,stroke-width:2px
+    style F fill:#78350f,stroke:#fcd34d,color:#fffbeb,stroke-width:2px
+    style G fill:#7f1d1d,stroke:#fca5a5,color:#fef2f2,stroke-width:2px
 ```
 
 ---
@@ -41,33 +46,20 @@ graph LR
 ## The 4 Modes
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0f172a', 'primaryTextColor': '#f1f5f9', 'lineColor': '#64748b', 'fontSize': '13px'}}}%%
-graph TB
-    CTRL["🎮 Mode Controller<br/><i>Only 1 active at a time</i>"]
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '16px', 'primaryColor': '#0f172a', 'primaryTextColor': '#f1f5f9', 'lineColor': '#64748b'}}}%%
+flowchart TB
+    CTRL["🎮 Mode Controller — only 1 active"] --> M1 & M2 & M3 & M4
 
-    CTRL --> M1 & M2 & M3 & M4
-
-    subgraph M1["📝 Text Mode"]
-        T1["Read Frame → YOLOv8 → JSON via SSE"]
-    end
-
-    subgraph M2["📸 Capture Mode"]
-        C1["Read Frame → YOLOv8 + BBox → Save PNG"]
-    end
-
-    subgraph M3["🎬 Video Mode"]
-        V1["Record 30s → YOLOv8 + BBox → H.264 MP4"]
-    end
-
-    subgraph M4["📺 Live Mode"]
-        L1["Continuous → model.track() → Trajectory + MJPEG"]
-    end
+    M1["📝 TEXT — Frame → YOLOv8 → JSON via SSE"]
+    M2["📸 CAPTURE — Frame → YOLOv8 + BBox → PNG"]
+    M3["🎬 VIDEO — 30s Record → YOLOv8 + BBox → H.264 MP4"]
+    M4["📺 LIVE — Continuous → model.track → Trajectory + MJPEG"]
 
     style CTRL fill:#4c1d95,stroke:#c4b5fd,color:#f5f3ff,stroke-width:2px
-    style M1 fill:#14532d,stroke:#86efac,color:#f0fdf4
-    style M2 fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff
-    style M3 fill:#78350f,stroke:#fcd34d,color:#fffbeb
-    style M4 fill:#7f1d1d,stroke:#fca5a5,color:#fef2f2
+    style M1 fill:#14532d,stroke:#86efac,color:#f0fdf4,stroke-width:2px
+    style M2 fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff,stroke-width:2px
+    style M3 fill:#78350f,stroke:#fcd34d,color:#fffbeb,stroke-width:2px
+    style M4 fill:#7f1d1d,stroke:#fca5a5,color:#fef2f2,stroke-width:2px
 ```
 
 <div align="center">
@@ -86,33 +78,22 @@ graph TB
 ## Architecture
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#1e293b', 'primaryTextColor': '#f8fafc', 'lineColor': '#94a3b8', 'fontSize': '13px'}}}%%
-graph TB
-    subgraph HW["🔌 Hardware"]
-        CAM["📷 Webcam"] ~~~ SER["📡 4G Modem"]
-    end
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '16px', 'primaryColor': '#1e293b', 'primaryTextColor': '#f8fafc', 'lineColor': '#94a3b8'}}}%%
+flowchart LR
+    CAM(("📷\nWebcam")) --> FLASK
+    SER(("📡\nModem")) --> FLASK
 
-    subgraph BACK["⚙️ Flask Backend"]
-        direction TB
-        APP["🌐 Flask :5000"]
-        YOLO["🧠 YOLOv8 Engine"]
-        subgraph MODES["📦 Modes"]
-            direction LR
-            m1["text.py"] ~~~ m2["capture.py"] ~~~ m3["video.py"] ~~~ m4["live.py"]
-        end
-        SYS["📊 sys_info.py"] ~~~ FF["🎞️ FFmpeg"]
-    end
+    FLASK["⚙️ Flask :5000\n+ YOLOv8 Engine"] --> MODES
 
-    subgraph FRONT["🖥️ Browser"]
-        UI["🌐 Bootstrap 5 + jQuery + SSE"]
-    end
+    MODES["📦 text.py | capture.py\nvideo.py | live.py"] --> UI
 
-    HW ==> BACK ==> FRONT
+    UI["🖥️ Browser\nBootstrap 5 + jQuery"]
 
-    style HW fill:#991b1b,stroke:#fca5a5,color:#fef2f2,stroke-width:2px
-    style BACK fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff,stroke-width:2px
-    style MODES fill:#1e40af,stroke:#60a5fa,color:#eff6ff
-    style FRONT fill:#14532d,stroke:#86efac,color:#f0fdf4,stroke-width:2px
+    style CAM fill:#991b1b,stroke:#fca5a5,color:#fef2f2,stroke-width:2px
+    style SER fill:#991b1b,stroke:#fca5a5,color:#fef2f2,stroke-width:2px
+    style FLASK fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff,stroke-width:2px
+    style MODES fill:#78350f,stroke:#fcd34d,color:#fffbeb,stroke-width:2px
+    style UI fill:#14532d,stroke:#86efac,color:#f0fdf4,stroke-width:2px
 ```
 
 ---
@@ -139,14 +120,14 @@ FINAL/
 ## Quick Start
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0f172a', 'primaryTextColor': '#f1f5f9', 'lineColor': '#64748b', 'fontSize': '14px'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '18px', 'primaryColor': '#0f172a', 'primaryTextColor': '#f1f5f9', 'lineColor': '#64748b'}}}%%
 flowchart LR
-    A["🔗 Clone"] ==> B["📦 Install"] ==> C["🚀 Run"] ==> D["🌐 Open"]
+    A["🔗 Clone"] ==> B["📦 Install"] ==> C["🚀 Run"] ==> D["🌐 Open\nlocalhost:5000"]
 
-    style A fill:#4c1d95,stroke:#c4b5fd,color:#f5f3ff
-    style B fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff
-    style C fill:#92400e,stroke:#fcd34d,color:#fffbeb
-    style D fill:#14532d,stroke:#86efac,color:#f0fdf4
+    style A fill:#4c1d95,stroke:#c4b5fd,color:#f5f3ff,stroke-width:2px
+    style B fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff,stroke-width:2px
+    style C fill:#92400e,stroke:#fcd34d,color:#fffbeb,stroke-width:2px
+    style D fill:#14532d,stroke:#86efac,color:#f0fdf4,stroke-width:2px
 ```
 
 ```bash
@@ -164,37 +145,25 @@ Open **http://localhost:5000** — done!
 
 ---
 
-## API at a Glance
+## API Summary
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#0f172a', 'primaryTextColor': '#f1f5f9', 'lineColor': '#475569', 'fontSize': '12px'}}}%%
-graph LR
-    C["🖥️ Client"]
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '15px', 'primaryColor': '#0f172a', 'primaryTextColor': '#f1f5f9', 'lineColor': '#475569'}}}%%
+flowchart LR
+    C(("🖥️\nClient")) --> G & T & I & V & L
 
-    C --> G & T & I & V & L
-
-    subgraph G["🌐 General"]
-        g1["GET /"] ~~~ g2["GET /info"] ~~~ g3["POST /mode"] ~~~ g4["POST /set_threshold"]
-    end
-    subgraph T["📝 Text"]
-        t1["GET /TextMode/feed"] ~~~ t2["POST /TextMode/control"]
-    end
-    subgraph I["📸 Capture"]
-        i1["GET /CaptureMode/feed"] ~~~ i2["POST /CaptureMode/control"]
-    end
-    subgraph V["🎬 Video"]
-        v1["GET /VideoMode/getVideo"] ~~~ v2["POST /VideoMode/control"]
-    end
-    subgraph L["📺 Live"]
-        l1["GET /video_feed"] ~~~ l2["GET /start_detection"] ~~~ l3["GET /stop_detection"]
-    end
+    G["🌐 GET / · GET /info\nPOST /mode · POST /set_threshold"]
+    T["📝 GET /TextMode/feed\nPOST /TextMode/control"]
+    I["📸 GET /CaptureMode/feed\nPOST /CaptureMode/control"]
+    V["🎬 GET /VideoMode/getVideo\nPOST /VideoMode/control"]
+    L["📺 GET /video_feed\nGET /start_detection\nGET /stop_detection"]
 
     style C fill:#4c1d95,stroke:#c4b5fd,color:#f5f3ff,stroke-width:2px
-    style G fill:#581c87,stroke:#d8b4fe,color:#faf5ff
-    style T fill:#14532d,stroke:#86efac,color:#f0fdf4
-    style I fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff
-    style V fill:#78350f,stroke:#fcd34d,color:#fffbeb
-    style L fill:#7f1d1d,stroke:#fca5a5,color:#fef2f2
+    style G fill:#581c87,stroke:#d8b4fe,color:#faf5ff,stroke-width:2px
+    style T fill:#14532d,stroke:#86efac,color:#f0fdf4,stroke-width:2px
+    style I fill:#1e3a5f,stroke:#93c5fd,color:#eff6ff,stroke-width:2px
+    style V fill:#78350f,stroke:#fcd34d,color:#fffbeb,stroke-width:2px
+    style L fill:#7f1d1d,stroke:#fca5a5,color:#fef2f2,stroke-width:2px
 ```
 
 ---
